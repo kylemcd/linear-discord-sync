@@ -1,0 +1,38 @@
+{
+  "name": "discord-linear-sync",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "predev": "node scripts/ensure-config.mjs",
+    "dev": "wrangler dev",
+    "predeploy": "node scripts/ensure-config.mjs --deploy",
+    "deploy": "wrangler d1 migrations apply DB --remote -c wrangler.local.jsonc && wrangler deploy -c wrangler.local.jsonc",
+    "pretypecheck": "node scripts/ensure-config.mjs --create",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
+    "pretest": "node scripts/ensure-config.mjs --create",
+    "test": "vitest run",
+    "discover": "tsx scripts/discover.ts",
+    "setup": "tsx scripts/setup.ts",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "node scripts/ensure-config.mjs --deploy && wrangler d1 migrations apply DB --remote -c wrangler.local.jsonc",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "hono": "^4.13.8"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@types/node": "^24.0.0",
+    "discord-api-types": "^0.38.55",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.137.0"
+  }
+}

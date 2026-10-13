@@ -1,0 +1,4 @@
+# Dependencies that may run install scripts. Both download a native binary.
+allowBuilds:
+  esbuild: true
+  workerd: true

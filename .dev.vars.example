@@ -1,0 +1,8 @@
+# Copy to .dev.vars for `wrangler dev` and `pnpm run discover`. Never commit .dev.vars.
+DISCORD_BOT_TOKEN=
+DISCORD_APPLICATION_ID=
+LINEAR_API_KEY=
+LINEAR_WEBHOOK_SECRET=
+ADMIN_TOKEN=
+D1_DATABASE_ID=
+WORKER_URL=https://discord-linear-sync.<your-subdomain>.workers.dev

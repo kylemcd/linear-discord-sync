@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "discord-linear-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Every minute: look for new forum posts (Discord has no webhook for them).
+  // Every 30th minute the same run also retries failed syncs, checks for
+  // missed Linear changes, archives finished threads and cleans up.
+  "triggers": { "crons": ["* * * * *"] },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "discord_linear_sync",
+      // Placeholder. Your database ID lives in .dev.vars (D1_DATABASE_ID), and
+      // `pnpm run deploy` fills it in via the gitignored wrangler.local.jsonc.
+      // `pnpm run setup` creates the database and sets the ID.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Earlier versions held a Discord Gateway connection in an always-on Durable
+  // Object. v2 deletes that class and its storage; the bot now polls instead.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["DiscordGateway"] },
+    { "tag": "v2", "deleted_classes": ["DiscordGateway"] }
+  ],
+
+  "observability": { "enabled": true },
+
+  // Set with `wrangler secret put <NAME>` (or .dev.vars locally).
+  "secrets": {
+    "required": ["DISCORD_BOT_TOKEN", "LINEAR_API_KEY", "LINEAR_WEBHOOK_SECRET", "ADMIN_TOKEN"]
+  }
+}
