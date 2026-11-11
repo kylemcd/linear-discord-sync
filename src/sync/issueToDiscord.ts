@@ -1,8 +1,10 @@
+import { Effect, Option, Result } from "effect";
 import { lifecycleTagIds, lookupByState, type ForumConfig } from "../config";
 import { parseLabelIds, type MappingRow } from "../db";
 import { DiscordApiError } from "../discord/rest";
 import { computeDesiredTags, sameTagSet } from "../discord/tags";
 import type { LinearIssue } from "../linear/client";
+import { readIssueResolution, ResolutionCommentError } from "../linear/resolution-comment";
 import { errorMessage, log } from "../log";
 import type { Services } from "../services";
 
@@ -160,7 +162,22 @@ async function maybeNotify(
 
   const ping = row.discord_author_id ? [row.discord_author_id] : [];
   const content = row.discord_author_id ? `<@${row.discord_author_id}> ${message}` : message;
-  await s.discord.sendMessage(row.discord_thread_id, { content }, ping);
+  const resolution = issue.state.type === "completed"
+    ? await Effect.runPromise(Effect.result(readIssueResolution({ linear: s.linear, issueId: issue.id })))
+    : Result.succeed(Option.none<string>());
+  if (Result.isFailure(resolution)) throw resolution.failure;
+  // An embed preserves the complete testing steps without the 2,000-character message limit.
+  // Discord limits embed descriptions to 4,096 characters. Oversized public comments stay in Linear.
+  const embeds = Option.isSome(resolution.success) && resolution.success.value.length <= 4096
+    ? [{ description: resolution.success.value }]
+    : undefined;
+  if (Option.isSome(resolution.success) && !embeds) {
+    throw new ResolutionCommentError({
+      issueId: issue.id,
+      message: "Public resolution is too long for Discord. Shorten the comment to 4,096 characters and resync the issue.",
+    });
+  }
+  await s.discord.sendMessage(row.discord_thread_id, { content, ...(embeds ? { embeds } : {}) }, ping);
   log.info({
     operation: "reporter_notification",
     result: "success",

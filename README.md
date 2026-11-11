@@ -7,9 +7,39 @@ This bot connects a Discord forum channel to Linear. It runs on Cloudflare Worke
 - Each new forum post becomes a Linear issue in Triage within a minute. The issue gets the post text, the attachments, and a link to the thread.
 - The bot replies once in the thread with the issue ID, for example "Tracked as ENG-123".
 - When the issue status changes in Linear, the bot changes the status tag on the thread. Other tags do not change.
-- When the issue is done, the bot tells the reporter. After 7 days, it archives the thread.
+- When the issue is done, the bot tells the reporter and includes its latest public resolution comment. After 7 days, it archives the thread.
 
-Linear controls the status. The bot does not send changes from Discord to Linear. It also does not copy replies or edits.
+Linear controls the status. The bot does not send changes from Discord to Linear. It copies only explicitly marked public resolution comments on completion.
+
+## Explain a fix before Done
+
+Before moving an issue to Done, the coding agent or maintainer posts a comment in Linear with this format:
+
+```markdown
+## Public resolution
+### What changed
+PNG uploads in account settings now save your profile image correctly.
+### How to test
+1. Open account settings and upload a PNG.
+2. Save, then reopen account settings. Your new image should still appear.
+### Availability
+Available in version 1.2.3. Update the app before testing.
+```
+
+For Sim Kit, use the release checkout's `write-issue-resolution` skill for customer wording and testing steps.
+Draft the explanation during release preparation. Post it after the fix is available in the published app, component, or service.
+Keep the issue open while the fix still needs a release or deployment.
+Confirm that Linear saved the comment before changing the status.
+The sync does not change Linear statuses or generate explanations. The agent must follow this workflow.
+Use plain language and keep the comment below 1,800 characters when possible.
+The entire marked comment is public. Keep personal information, credentials, diagnostic attachments, and internal notes in separate, unmarked comments.
+
+On entry to a completed state with a configured notification, the bot includes the newest marked comment in the Discord reply.
+It selects by comment creation time and reads up to 500 comments across paginated API responses.
+Unmarked comments stay private. Issues with no public resolution keep the configured completion message.
+Comment lookup failures retry through the existing sync queue. Comments above Discord's 4,096-character embed limit also wait for correction and resync.
+Replayed status events do not send another notification. Reopened issues need a new public resolution comment before their next completion.
+Later comment edits do not send another message. Canceled and duplicate states retain their configured messages without a resolution.
 
 ## How it works
 

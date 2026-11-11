@@ -166,6 +166,9 @@ importers:
 
   .:
     dependencies:
+      effect:
+        specifier: 4.0.3
+        version: 4.0.3
       hono:
         specifier: ^4.13.8
         version: 4.13.8
@@ -966,6 +969,9 @@ packages:
 
   discord-api-types@0.38.55:
     resolution: {integrity: sha512-ytuaRTzdnHUCXJ6KjL9MrItQX0xKncBKEeYI1Bst4+ud47eejH3cG6gaesYakjpPcUhh68XYS2YwGq3mmujFsA==}
+
+  effect@4.0.3:
+    resolution: {integrity: sha512-LoWn/Uwwx0JjHSDmBAAahx8sB+klzM6vsZovnbYowBNw6B4QScJLRLBByO61plvNiycx7HPN8FnsWUCu0eXW5w==}
 
   error-stack-parser-es@1.0.5:
     resolution: {integrity: sha512-5qucVt2XcuGMcEGgWI7i+yZpmpByQ8J1lHhcL7PwqCwu9FPP3VUXzT4ltHe5i2z9dePwEHcDVOAfSnHsOlCXRA==}
@@ -1839,6 +1845,8 @@ snapshots:
   detect-libc@2.1.2: {}
 
   discord-api-types@0.38.55: {}
+
+  effect@4.0.3: {}
 
   error-stack-parser-es@1.0.5: {}
 

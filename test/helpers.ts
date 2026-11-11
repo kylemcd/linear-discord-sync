@@ -156,6 +156,7 @@ export class FakeLinear {
   createThenFail = 0;
   links: Array<{ issueId: string; url: string }> = [];
   comments: Array<{ issueId: string; body: string }> = [];
+  failCommentLookup = false;
   /** getIssue returns the snapshot from before the latest change this many times. */
   staleReads = 0;
   private previous = new Map<string, StoredIssue>();
@@ -209,6 +210,16 @@ export class FakeLinear {
 
   async createComment(issueId: string, body: string) {
     this.comments.push({ issueId, body });
+  }
+
+  /** Simulates the external comment query while keeping sync and persistence real. */
+  async gql(_query: string, variables: { id: string }) {
+    if (this.failCommentLookup) throw new LinearApiError("Linear is down");
+    return { issue: { comments: {
+      nodes: this.comments.filter((comment) => comment.issueId === variables.id)
+        .map((comment, index) => ({ body: comment.body, createdAt: new Date(index * 1000).toISOString() })),
+      pageInfo: { hasNextPage: false, endCursor: null },
+    } } };
   }
 
   async prepareUpload(): Promise<never> {

@@ -24,6 +24,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "effect": "4.0.3",
     "hono": "^4.13.8"
   },
   "devDependencies": {

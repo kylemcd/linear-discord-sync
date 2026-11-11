@@ -78,6 +78,68 @@ describe("Linear status → Discord tags", () => {
     ]);
   });
 
+  it("delivers the latest public fix and testing steps once without copying internal comments", async () => {
+    const { discord, linear, issueId, sync } = await tracked();
+    await linear.createComment(issueId, "## Public resolution\nOld fix.");
+    const summary = "## Public resolution\n### What changed\nPNG uploads now work.\n### How to test\nUpload a PNG in account settings. Your new image should appear.\n### Availability\nAvailable in 1.2.3.";
+    await linear.createComment(issueId, summary);
+    await linear.createComment(issueId, "Internal diagnostic: private@example.com");
+    linear.setState(issueId, STATE.done);
+    await sync();
+    await sync();
+    expect(discord.sent).toEqual([{
+      channelId: expect.any(String), content: "<@300> This issue has been marked fixed.",
+      embeds: [{ description: summary }], ping: ["300"],
+    }]);
+  });
+
+  it("retries a failed comment lookup before recording the completion notification", async () => {
+    const { s, discord, linear, threadId, issueId, sync } = await tracked();
+    await linear.createComment(issueId, "## Public resolution\nUpload a PNG to test the fix.");
+    linear.setState(issueId, STATE.done);
+    linear.failCommentLookup = true;
+    await sync();
+    expect(discord.sent).toHaveLength(0);
+    expect((await s.db.getByThread(threadId))?.needs_sync).toBe(1);
+    expect((await s.db.getByThread(threadId))?.last_state_id).toBe(STATE.triage.id);
+    linear.failCommentLookup = false;
+    await runMaintenance(s);
+    expect(discord.sent[0]?.embeds?.[0]?.description).toContain("Upload a PNG");
+    expect((await s.db.getByThread(threadId))?.needs_sync).toBe(0);
+  });
+
+  it("keeps a long resolution complete in an embed instead of truncating its test steps", async () => {
+    const { discord, linear, issueId, sync } = await tracked();
+    const summary = `## Public resolution\n${"Fix details. ".repeat(180)}\nHow to test: upload a PNG.`;
+    await linear.createComment(issueId, summary);
+    linear.setState(issueId, STATE.done);
+    await sync();
+    expect(discord.sent[0]?.embeds?.[0]?.description).toBe(summary);
+  });
+
+  it("leaves oversized resolutions pending so the reporter never receives partial testing instructions", async () => {
+    const { s, discord, linear, threadId, issueId, sync } = await tracked();
+    await linear.createComment(issueId, `## Public resolution\n${"x".repeat(4096)}`);
+    linear.setState(issueId, STATE.done);
+    await sync();
+    expect(discord.sent).toHaveLength(0);
+    expect((await s.db.getByThread(threadId))?.needs_sync).toBe(1);
+    const corrected = "## Public resolution\nUpload a PNG to test the fix.";
+    linear.comments = [{ issueId, body: corrected }];
+    await sync();
+    expect(discord.sent[0]?.embeds?.[0]?.description).toBe(corrected);
+    expect((await s.db.getByThread(threadId))?.needs_sync).toBe(0);
+  });
+
+  it("does not publish resolution comments for canceled issues", async () => {
+    const { discord, linear, issueId, sync } = await tracked({ forum: { notify: { "type:canceled": "Closed." } } });
+    await linear.createComment(issueId, "## Public resolution\nPrevious fix.");
+    linear.setState(issueId, STATE.canceled);
+    await sync();
+    expect(discord.sent[0]?.content).toBe("<@300> Closed.");
+    expect(discord.sent[0]?.embeds).toBeUndefined();
+  });
+
   it("unarchives to retag an archived thread, and re-archives it if the issue is still done", async () => {
     const { s, discord, linear, threadId, issueId, sync } = await tracked();
     discord.threads.get(threadId)!.thread_metadata.archived = true;
