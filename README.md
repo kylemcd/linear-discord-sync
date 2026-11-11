@@ -26,7 +26,6 @@ PNG uploads in account settings now save your profile image correctly.
 Available in version 1.2.3. Update the app before testing.
 ```
 
-For Sim Kit, use the release checkout's `write-issue-resolution` skill for customer wording and testing steps.
 Draft the explanation during release preparation. Post it after the fix is available in the published app, component, or service.
 Keep the issue open while the fix still needs a release or deployment.
 Confirm that Linear saved the comment before changing the status.
